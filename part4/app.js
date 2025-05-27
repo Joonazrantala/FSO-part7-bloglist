@@ -8,17 +8,17 @@ const config = require('./utils/config.js')
 app.use(cors())
 app.use(express.json())
 
-logger.info("connecting to:", config.MONGODB_URI)
+logger.info('connecting to:', config.MONGODB_URI)
 
 mongoose
   .connect(config.MONGODB_URI)
   .then(() => {
-    logger.info("Connected to database")
+    logger.info('Connected to database')
   })
   .catch((error) => {
-    logger.error("Failed to connect:", error.message)
+    logger.error('Failed to connect:', error.message)
   })
 
-app.use("/api", blogsRouter)
+app.use('/api', blogsRouter)
 
 module.exports = app
