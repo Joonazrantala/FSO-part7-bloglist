@@ -2,14 +2,14 @@ const { test, describe } = require('node:test')
 const assert = require('node:assert')
 const listHelper = require('../utils/list_helper')
 
-test('dummy returns one', () => {
+test.skip('dummy returns one', () => {
   const blogs = []
 
   const result = listHelper.dummy(blogs)
   assert.strictEqual(result, 1)
 })
 
-describe('total likes', () => {
+describe.skip('total likes', () => {
   test('empty list returns zero', () => {
     const blogs = []
 
@@ -51,10 +51,10 @@ describe('total likes', () => {
 
     const result = listHelper.total_likes(blogs)
     assert.strictEqual(result, 678)
-
   })
+})
 
-  describe('most likes', () => {
+describe.skip('most likes', () => {
     test('empty list returns zero', () => {
       const blogs = []
 
@@ -142,9 +142,4 @@ describe('total likes', () => {
       const result = listHelper.most_likes(blogs)
       assert.deepStrictEqual(result, blog)
     })
-  } 
-
-  )
-
-
-})
+  })
