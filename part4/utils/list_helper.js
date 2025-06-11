@@ -12,7 +12,7 @@ const total_likes = (blogs) => {
   }
 }
 
-function most_likes(blogs) {
+function favorite_blog(blogs) {
   if (blogs.length == 0) {
     return null
   } else {
@@ -23,8 +23,31 @@ function most_likes(blogs) {
   }
 }
 
+const most_blogs = (blogs) => {
+  const map1 = new Map()
+  blogs.forEach(function (blog) {
+    const count = map1.get(blog.author) || 0
+    map1.set(blog.author, count + 1)
+  })
+
+  const result = [...map1.entries()].reduce((a, e) => e[1] > a[1] ? e : a)
+  return result
+}
+
+const most_likes = (blogs) => {
+  const map1 = new Map()
+  blogs.forEach(function (blog) {
+    const count = map1.get(blog.author) || 0
+    map1.set(blog.author, count + blog.likes)
+  })
+
+  const result = [...map1.entries()].reduce((a, e) => e[1] > a[1] ? e : a)
+  return result
+}
 module.exports = {
   dummy,
   total_likes,
+  favorite_blog,
+  most_blogs,
   most_likes
 }

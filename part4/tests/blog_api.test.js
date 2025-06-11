@@ -1,28 +1,46 @@
-const { test, after, beforeEach, describe } = require('node:test')
+const { test, after, beforeEach, describe} = require('node:test')
 const mongoose = require('mongoose')
 const supertest = require('supertest')
 const app = require('../app')
 const assert = require('node:assert')
 const Blog = require("../models/blog")
-
+const User = require('../models/user')
+const { MONGODB_URI } = require('../utils/config')
 const api = supertest(app)
-
-const initialblogs = [{
-    title: "wc",
-    author: "mixu",
-    url: "www.axopax.com",
-    likes: 12
-}]
+const bcrypt = require('bcrypt')
+const jwt = require('jsonwebtoken')
 
 describe("blog API tests", () => {
-    beforeEach(async () => {
-    await Blog.deleteMany({})
-    const blogObject = new Blog(initialblogs[0])
-    await blogObject.save()
-    })
 
-    test("notes are returned as json", async () => {
-        const response = await api.get("/api/blogs").expect(200).expect('Content-Type', /application\/json/)
+    beforeEach(async () => {
+        await User.deleteMany({})
+        await Blog.deleteMany({})
+
+        const passwordHash = await bcrypt.hash('testpass', 10)
+        const user = new User({ username: 'testuser', name: 'Test User', passwordHash })
+        const savedUser = await user.save()
+
+        const userId = savedUser._id.toString()
+
+        // create a token
+        token = jwt.sign({ username: savedUser.username, id: savedUser._id }, process.env.SECRET)
+
+        const blog = new Blog({
+            title: "test blog",
+            author: "tester",
+            url: "http://example.com",
+            likes: 5,
+            user: savedUser._id,
+        })
+        await blog.save()
+
+        await User.findByIdAndUpdate(savedUser._id, { blogs: [blog._id] }, { new: true })
+        })
+
+    test("blogs are returned as json", async () => {
+        const response = await api.get("/api/blogs")
+                                    .expect(200)
+                                    .expect('Content-Type', /application\/json/)
         assert.strictEqual(response.body.length, 1)
     })
 
@@ -38,13 +56,16 @@ describe("blog API tests", () => {
             title: "mäxä",
             author: "pekka",
             url: "www.tiini.com",
-            likes: 10
+            likes: 10,
         }
         
         const response = await api.get("/api/blogs")
         const length = response.body.length
 
-        await api.post("/api/blogs").send(newpost).expect(201)
+        await api.post("/api/blogs")
+                    .set("Authorization", `Bearer ${token}`)
+                    .send(newpost)
+                    .expect(201)
 
         const newresponse = await api.get("/api/blogs")
         const newlength = newresponse.body.length
@@ -59,7 +80,10 @@ describe("blog API tests", () => {
             url: "www.tiini.com",
         }
 
-        const response = await api.post("/api/blogs").send(newpost).expect(201)
+        const response = await api.post("/api/blogs")
+                                    .set("Authorization", `Bearer ${token}`)
+                                    .send(newpost)
+                                    .expect(201)
         assert.strictEqual(response.body.likes, 0)
     })
 
@@ -69,20 +93,28 @@ describe("blog API tests", () => {
             url: "www.tiini.com",
             likes: 0
         }
-        await api.post("/api/blogs").send(postnotitle).expect(400)
+        await api.post("/api/blogs")
+                    .set("Authorization", `Bearer ${token}`)
+                    .send(postnotitle)
+                    .expect(400)
 
         const postnourl = {
             title: "tolppa",
             author: "pekka",
             likes: 0
         }
-        await api.post("/api/blogs").send(postnourl).expect(400)
+        await api.post("/api/blogs")
+                    .set("Authorization", `Bearer ${token}`)
+                    .send(postnourl)
+                    .expect(400)
     })
 
     test("delete request deletes the blog", async () => {
         const blogs = await api.get("/api/blogs")
-        id = blogs.body[0].id
-        await api.delete(`/api/blogs/${id}`).expect(204)
+        const id = blogs.body[0].id
+        await api.delete(`/api/blogs/${id}`)
+                    .set("Authorization", `Bearer ${token}`)
+                    .expect(204)
 
         const newblogs = await api.get("/api/blogs")
         const all_ids = newblogs.body.map(blog => blog.id)
@@ -90,7 +122,19 @@ describe("blog API tests", () => {
         assert(!all_ids.includes(id))
         assert.strictEqual(newblogs.body.length, blogs.body.length - 1)
     })
-    after(async () => {
-        await mongoose.connection.close()
+
+    test("patch updates likes", async () => {
+        const blogs = await api.get("/api/blogs")
+        const id = blogs.body[0].id
+        const response = await api.patch(`/api/blogs/${id}`).send({likes: 13}).expect(200)
+
+        assert.strictEqual(response.body.likes, 13)
     })
+
+    after(async () => {
+    await mongoose.connection.close()
+    })
+
+
 })
+
