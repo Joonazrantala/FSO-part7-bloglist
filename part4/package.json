@@ -10,11 +10,11 @@
     "start": "cross-env NODE_ENV=production node index.js",
     "dev": "cross-env NODE_ENV=development nodemon index.js",
     "test": "cross-env NODE_ENV=test node --test",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "start:test": "cross-env NODE_ENV=test node index.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
-    "cors": "^2.8.5",
     "cross-env": "^7.0.3",
     "crossenv": "^0.0.2-security",
     "dotenv": "^16.5.0",
