@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react'
 import blogService from './services/blogs'
 import loginService from './services/login'
+import Notification from './components/notification'
+import Togglable from './components/togglable'
+import NewBlogForm from './components/newBlogForm'
+import Blog from './components/Blog'
 
 const App = () => {
   const [blogs, setBlogs] = useState([])
@@ -9,9 +13,6 @@ const App = () => {
   const [user, setUser] = useState(null)
   const [errorMessage, setErrorMessage] = useState(null)
   const [successMessage, setSuccessMessage] = useState(null)
-  const [title, setTitle] = useState("")
-  const [author, setAuthor] = useState("")
-  const [url, setUrl] = useState("")
 
   useEffect(() => {
     if (user) {
@@ -53,24 +54,20 @@ const App = () => {
     setUser(null)
   }
 
-  const Notification = ({ message, type }) => {
-    if (!message) return null // Don’t show anything if there's no message
-
-    const style = {
-      color: type === 'error' ? 'red' : 'green',
-      backgroundColor: type === 'error' ? '#fdd' : '#dfd',
-      border: `1px solid ${type === 'error' ? 'red' : 'green'}`,
-      fontSize: 20,
-      padding: 10,
-      marginBottom: 10,
-      borderRadius: 5,
+  const createBlog = async (blogObject) => {
+    try {
+      const newBlog = await blogService.postBlog(blogObject, user.token)
+      setBlogs(blogs.concat(newBlog))
+      setSuccessMessage(`A new blog "${blogObject.title}" by ${blogObject.author} added!`)
+      setTimeout(() => setSuccessMessage(null), 5000)
+    } catch {
+      setErrorMessage('Failed to create blog')
+      setTimeout(() => setErrorMessage(null), 5000)
+    }
   }
 
-    return (
-      <div style={style}className="notification">
-        {message}
-      </div>
-    )
+  const handleDelete = (idtodelete) => {
+    setBlogs(blogs.filter(blog => blog.id !== idtodelete))
   }
 
   const loginForm = () => (
@@ -100,72 +97,22 @@ const App = () => {
   const fetchMyBlogs = async () => {
     try {
       const myBlogs = await blogService.getUserBlogs(user.token)
+      console.log(myBlogs)
+      myBlogs.sort((a,b) => {
+        if (a.likes > b.likes) {
+          return -1
+        } 
+        if (a.likes < b.likes) {
+          return 1
+        }
+        return 0
+      })
+
       setBlogs(myBlogs)
 
     } catch (error) {
       console.error('Failed to fetch user blogs', error)
     }
-  }
-
-  const handleNewBlog = async (event) => {
-    event.preventDefault()
-    const blogObject = {
-      title: title,
-      author: author,
-      url: url
-    }
-
-    try {
-      const newblog = await blogService.postBlog(blogObject, user.token)
-      setSuccessMessage(`A new blog ${title} by ${author} has been added`)
-      setTimeout(() => {
-        setSuccessMessage(null)
-      }, 5000);
-    }
-    catch (exception) {
-      setErrorMessage("Can't add new blog")
-      setTimeout(() => {
-        setErrorMessage(null)
-      }, 5000);
-    }
-  }
-
-  const newBlogForm = () => (
-    <div>
-    <h2>CREATE NEW</h2>
-    <form onSubmit={handleNewBlog}>
-      <div>
-        title:
-        <input
-        type="text"
-        value={title}
-        onChange={(event) => setTitle(event.target.value)}
-        />
-      </div>
-      <div>
-        author:
-        <input
-        type="text"
-        value={author}
-        onChange={(event) => setAuthor(event.target.value)}
-        />
-        </div>
-        <div>
-        url:
-        <input
-        type="text"
-        value={url}
-        onChange={(event) => setUrl(event.target.value)}
-        />
-      </div>
-      <button type="submit">create</button>
-    </form>
-    </div>
-  )
-  const Blog = (props) => {
-    return (
-        <p style={{ margin: 0, lineHeight: 1, color: 'red'}}>{props.blog.title} by {props.blog.author}</p>
-    )
   }
 
   const logoutButton = (props) => {
@@ -174,7 +121,6 @@ const App = () => {
     )
   }
 
-  
   return (
     <div>
       <h1>Blogs</h1>
@@ -186,9 +132,20 @@ const App = () => {
     {user && 
     <div>
       <p>{user.name} logged in {logoutButton()}</p>
-      {newBlogForm()}
+      <Togglable buttonLabel="New blog">
+        <NewBlogForm
+          createBlog={createBlog}
+              />
+      </Togglable>
       {blogs.map(blog =>
-        <Blog key={blog.id} blog={blog}/>
+        <Blog
+          key={blog.id}
+          blog={blog} 
+          user={user} 
+          onDelete={handleDelete}
+          setErrorMessage={setErrorMessage}
+          setSuccessMessage={setSuccessMessage}
+          />
       )}
     </div>
     }

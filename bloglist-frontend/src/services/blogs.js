@@ -8,13 +8,13 @@ const getAll = () => {
 
 const getUserBlogs = async (token) => {
   const config = {
-  headers: {
-    Authorization: `Bearer ${token}`,
-  },
-}
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
 
-const response = await axios.get(`${baseUrl}/myblogs`, config)
-return response.data
+  const response = await axios.get(`${baseUrl}/myblogs`, config)
+  return response.data
 }
 
 const postBlog = async (blog, token) => {
@@ -27,4 +27,26 @@ const postBlog = async (blog, token) => {
   return response.data
 }
 
-export default { getAll, getUserBlogs, postBlog }
+const updateBlog = async (id, blog, token) => {
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  }
+
+  const response = await axios.put(`${baseUrl}/${id}`, blog, config)
+  return response.data
+}
+
+const deleteBlog = async (id, token) => {
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  }
+
+  const response = await axios.delete(`${baseUrl}/${id}`, config)
+  return response
+}
+
+export default { getAll, getUserBlogs, postBlog, updateBlog, deleteBlog }
