@@ -12,7 +12,7 @@ userRouter.post("/users", async (req, res) => {
     const { username, password, name } = req.body
 
     if (!password || !username || username.length < 3 || password.length < 3) {
-        res.status(400).json({ error: "invalid username or password"} )
+        return res.status(400).json({ error: "invalid username or password"} )
     }
     
     const saltRounds = 10
@@ -23,8 +23,9 @@ userRouter.post("/users", async (req, res) => {
         passwordHash,
         name
     })
-
+    
     const savedUser = await user.save()
+    console.log('New user created:', savedUser.username)
     res.status(201).json(savedUser)
 })
 
