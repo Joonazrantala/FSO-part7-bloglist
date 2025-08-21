@@ -16,7 +16,7 @@ const App = () => {
 
   useEffect(() => {
     if (user) {
-      fetchMyBlogs()
+      fetchAllBlogs()
     }
   }, [user])
 
@@ -57,6 +57,7 @@ const App = () => {
   const createBlog = async (blogObject) => {
     try {
       const newBlog = await blogService.postBlog(blogObject, user.token)
+      newBlog.user = { ...user }
       setBlogs(blogs.concat(newBlog))
       setSuccessMessage(`A new blog "${blogObject.title}" by ${blogObject.author} added!`)
       setTimeout(() => setSuccessMessage(null), 5000)
@@ -94,7 +95,7 @@ const App = () => {
       </form>
   )
   
-  const fetchMyBlogs = async () => {
+  /*const fetchMyBlogs = async () => {
     try {
       const myBlogs = await blogService.getUserBlogs(user.token)
       console.log(myBlogs)
@@ -112,6 +113,16 @@ const App = () => {
 
     } catch (error) {
       console.error('Failed to fetch user blogs', error)
+    }
+  }*/
+
+  const fetchAllBlogs = async () => {
+    try {
+      const allBlogs = await blogService.getAll()
+      allBlogs.sort((a, b) => b.likes - a.likes)
+      setBlogs(allBlogs)
+    } catch (error) {
+      console.error('Failed to fetch blogs', error)
     }
   }
 

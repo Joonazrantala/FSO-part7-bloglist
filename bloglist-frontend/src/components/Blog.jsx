@@ -94,6 +94,8 @@ const Blog = (props) => {
     setShowAll(!showAll)
   }
 
+  const canDelete = props.blog.user.username === props.user.username
+
     if (!showAll) {
       return (
         <div style={containerStyle}>
@@ -111,7 +113,8 @@ const Blog = (props) => {
                <button onClick={handleLikeClick}>Like</button></div>
             <div style={infoStyle}>User: {props.blog.user.name}</div>
             <div>
-              <button onClick={handleDeleteClick}>Delete</button></div>
+              {canDelete && <button onClick={handleDeleteClick}>Delete</button>}
+            </div>
         </div>
       )
     }
