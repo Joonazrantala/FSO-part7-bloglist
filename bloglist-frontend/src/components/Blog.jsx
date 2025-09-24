@@ -1,9 +1,12 @@
 import { useState } from "react";
 import blogService from "../services/blogs";
+import { useDispatch } from "react-redux";
+import { setNotification, clearNotification } from "../reducers/notificationReducer";
 
 const Blog = (props) => {
   const [showAll, setShowAll] = useState(false);
   const [blogLikes, setBlogLikes] = useState(props.blog.likes);
+  const dispatch = useDispatch()
 
   const containerStyle = {
     border: "1px solid #ccc",
@@ -44,19 +47,24 @@ const Blog = (props) => {
     if (!confirmDelete) return;
 
     try {
-      const deleteblog = await blogService.deleteBlog(
+      const response = await blogService.deleteBlog(
         props.blog.id,
         props.user.token,
       );
-      props.setSuccessMessage("Blog deleted");
+      dispatch(setNotification({
+        message: `Blog ${props.blog.title} deleted`
+      }));
       setTimeout(() => {
-        props.setSuccessMessage(null);
+        dispatch(clearNotification());
       }, 5000);
       props.onDelete(props.blog.id);
     } catch {
-      props.setErrorMessage("Can't delete blog");
+      dispatch(setNotification({
+        message: "Can't delete blog",
+        type: "error"
+      }));
       setTimeout(() => {
-        props.setErrorMessage(null);
+        dispatch(clearNotification());
       }, 5000);
     }
   };
@@ -81,14 +89,20 @@ const Blog = (props) => {
         props.user.token,
       );
       setBlogLikes(update.likes);
-      props.setSuccessMessage("Blog liked");
+      dispatch(setNotification({
+        message: "Blog liked",
+        type: "success"
+      }))
       setTimeout(() => {
-        props.setSuccessMessage(null);
+        dispatch(clearNotification());
       }, 5000);
     } catch (exception) {
-      props.setErrorMessage("Can't update blog likes");
+      dispatch(setNotification({
+        message: "Can't handle blog likes",
+        type: "error"
+      }))
       setTimeout(() => {
-        props.setErrorMessage(null);
+        dispatch(clearNotification());
       }, 5000);
     }
   };

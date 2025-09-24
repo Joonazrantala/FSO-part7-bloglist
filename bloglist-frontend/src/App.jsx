@@ -5,20 +5,27 @@ import Notification from "./components/notification";
 import Togglable from "./components/togglable";
 import NewBlogForm from "./components/newBlogForm";
 import Blog from "./components/Blog";
+import { clearNotification, setNotification } from "./reducers/notificationReducer";
+import { setBlogs } from "./reducers/blogReducer";
+import { useDispatch, useSelector } from "react-redux";
 
 const App = () => {
-  const [blogs, setBlogs] = useState([]);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [user, setUser] = useState(null);
-  const [errorMessage, setErrorMessage] = useState(null);
-  const [successMessage, setSuccessMessage] = useState(null);
+  const dispatch = useDispatch()
+  const blogs = useSelector(state => state.blogs)
 
+  
   useEffect(() => {
-    if (user) {
-      fetchAllBlogs();
-    }
-  }, [user]);
+    const fetchData = async () => {
+      const blogs = await blogService.getAll();
+      blogs.sort((a, b) => b.likes - a.likes)
+      console.log(blogs)
+      dispatch(setBlogs(blogs));
+    };
+    fetchData();
+  }, [dispatch]);
 
   useEffect(() => {
     const loggedUserJSON = window.localStorage.getItem("loggedBlogappUser");
@@ -38,9 +45,9 @@ const App = () => {
       setUsername("");
       setPassword("");
     } catch (exception) {
-      setErrorMessage("Wrong credentials");
+      dispatch(setNotification({message: "Unauthorized login", type: "error"}));
       setTimeout(() => {
-        setErrorMessage(null);
+        dispatch(clearNotification());
       }, 5000);
     }
   };
@@ -55,13 +62,17 @@ const App = () => {
       const newBlog = await blogService.postBlog(blogObject, user.token);
       newBlog.user = { ...user };
       setBlogs(blogs.concat(newBlog));
-      setSuccessMessage(
-        `A new blog "${blogObject.title}" by ${blogObject.author} added!`,
-      );
-      setTimeout(() => setSuccessMessage(null), 5000);
+      dispatch(setNotification({
+        message: `A new blog "${blogObject.title}" by ${blogObject.author} added!`,
+        type: "success"
+      }))
+      setTimeout(() => dispatch(clearNotification()), 5000);
     } catch {
-      setErrorMessage("Failed to create blog");
-      setTimeout(() => setErrorMessage(null), 5000);
+      dispatch(setNotification({
+        message: "Failed to create blog",
+        type: "error"
+      }))
+      setTimeout(() => dispatch(clearNotification()), 5000);
     }
   };
 
@@ -114,15 +125,7 @@ const App = () => {
     }
   }*/
 
-  const fetchAllBlogs = async () => {
-    try {
-      const allBlogs = await blogService.getAll();
-      allBlogs.sort((a, b) => b.likes - a.likes);
-      setBlogs(allBlogs);
-    } catch (error) {
-      console.error("Failed to fetch blogs", error);
-    }
-  };
+  
 
   const logoutButton = (props) => {
     return (
@@ -135,8 +138,7 @@ const App = () => {
   return (
     <div>
       <h1>Blogs</h1>
-      <Notification message={successMessage} type="success" />
-      <Notification message={errorMessage} type="error" />
+      <Notification/>
       {!user && <h2>Log in to application</h2>}
 
       {!user && loginForm()}
@@ -154,8 +156,6 @@ const App = () => {
               blog={blog}
               user={user}
               onDelete={handleDelete}
-              setErrorMessage={setErrorMessage}
-              setSuccessMessage={setSuccessMessage}
             />
           ))}
         </div>
