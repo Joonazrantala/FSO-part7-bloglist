@@ -1,0 +1,15 @@
+# Node modules
+node_modules/
+part4/node_modules/
+bloglist-frontend/node_modules/
+
+# Environment variables
+.env
+part4/.env
+
+# Logs
+*.log
+
+# Build folders
+dist/
+.vite/
