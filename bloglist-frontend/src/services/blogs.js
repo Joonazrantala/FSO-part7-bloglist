@@ -50,4 +50,15 @@ const deleteBlog = async (id, token) => {
   return response;
 };
 
-export default { getAll, getUserBlogs, postBlog, updateBlog, deleteBlog };
+const deleteAll = async (token) => {
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+  console.log(`${baseUrl}/deleteall`, config)
+  const response = await axios.delete(`${baseUrl}/deleteall`, config)
+  return response
+}
+
+export default { getAll, getUserBlogs, postBlog, updateBlog, deleteBlog, deleteAll };

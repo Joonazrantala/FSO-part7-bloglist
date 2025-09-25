@@ -6,22 +6,21 @@ import Togglable from "./components/togglable";
 import NewBlogForm from "./components/newBlogForm";
 import Blog from "./components/Blog";
 import { clearNotification, setNotification } from "./reducers/notificationReducer";
-import { setBlogs } from "./reducers/blogReducer";
+import { setBlogs, createBlog, deleteBlog } from "./reducers/blogReducer";
 import { useDispatch, useSelector } from "react-redux";
+import { setUser } from "./reducers/userReducer";
 
 const App = () => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [user, setUser] = useState(null);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const user = useSelector(state => state.user)
   const dispatch = useDispatch()
   const blogs = useSelector(state => state.blogs)
 
-  
   useEffect(() => {
     const fetchData = async () => {
       const blogs = await blogService.getAll();
       blogs.sort((a, b) => b.likes - a.likes)
-      console.log(blogs)
       dispatch(setBlogs(blogs));
     };
     fetchData();
@@ -29,21 +28,21 @@ const App = () => {
 
   useEffect(() => {
     const loggedUserJSON = window.localStorage.getItem("loggedBlogappUser");
-    if (loggedUserJSON) {
-      const user = JSON.parse(loggedUserJSON);
-      setUser(user);
+    if (loggedUserJSON && loggedUserJSON !== "undefined") {
+      const loggedUser = JSON.parse(loggedUserJSON);
+      console.log("logged user", loggedUser)
+      dispatch(setUser(loggedUser));
     }
-  }, []);
+  }, [dispatch]);
 
   const handleLogin = async (event) => {
     event.preventDefault();
     try {
-      const user = await loginService.login({ username, password });
-
-      window.localStorage.setItem("loggedBlogappUser", JSON.stringify(user));
-      setUser(user);
-      setUsername("");
-      setPassword("");
+      const response = await loginService.login({ username, password });
+      window.localStorage.setItem("loggedBlogappUser", JSON.stringify(response));
+      dispatch(setUser(response))
+      setUsername('')
+      setPassword('')
     } catch (exception) {
       dispatch(setNotification({message: "Unauthorized login", type: "error"}));
       setTimeout(() => {
@@ -54,14 +53,16 @@ const App = () => {
 
   const handleLogout = () => {
     window.localStorage.removeItem("loggedBlogappUser");
-    setUser(null);
+    dispatch(setUser(null));
   };
 
-  const createBlog = async (blogObject) => {
+  const handleCreateBlog = async (blogObject) => { // create new blog
     try {
       const newBlog = await blogService.postBlog(blogObject, user.token);
       newBlog.user = { ...user };
-      setBlogs(blogs.concat(newBlog));
+      dispatch(createBlog(newBlog))
+
+
       dispatch(setNotification({
         message: `A new blog "${blogObject.title}" by ${blogObject.author} added!`,
         type: "success"
@@ -77,7 +78,7 @@ const App = () => {
   };
 
   const handleDelete = (idtodelete) => {
-    setBlogs(blogs.filter((blog) => blog.id !== idtodelete));
+    dispatch(deleteBlog(idtodelete))
   };
 
   const loginForm = () => (
@@ -104,29 +105,6 @@ const App = () => {
     </form>
   );
 
-  /*const fetchMyBlogs = async () => {
-    try {
-      const myBlogs = await blogService.getUserBlogs(user.token)
-      console.log(myBlogs)
-      myBlogs.sort((a,b) => {
-        if (a.likes > b.likes) {
-          return -1
-        } 
-        if (a.likes < b.likes) {
-          return 1
-        }
-        return 0
-      })
-
-      setBlogs(myBlogs)
-
-    } catch (error) {
-      console.error('Failed to fetch user blogs', error)
-    }
-  }*/
-
-  
-
   const logoutButton = (props) => {
     return (
       <button type="button" onClick={handleLogout}>
@@ -148,7 +126,7 @@ const App = () => {
             {user.name} logged in {logoutButton()}
           </p>
           <Togglable buttonLabel="New blog">
-            <NewBlogForm createBlog={createBlog} />
+            <NewBlogForm handleCreateBlog={handleCreateBlog} user={user}/>
           </Togglable>
           {blogs.map((blog) => (
             <Blog

@@ -1,13 +1,14 @@
 import { useState } from "react";
+import blogService from "../services/blogs"
 
-const NewBlogForm = ({ createBlog }) => {
+const NewBlogForm = ({ handleCreateBlog, user }) => {
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [url, setUrl] = useState("");
 
   const handleNewBlog = (event) => {
     event.preventDefault();
-    createBlog({
+    handleCreateBlog({
       title,
       author,
       url,
@@ -47,6 +48,11 @@ const NewBlogForm = ({ createBlog }) => {
         </div>
         <button type="submit">create</button>
       </form>
+      <button onClick={ async () => {
+                if (!window.confirm("Are you sure you want to delete all blogs?")) return
+                await blogService.deleteAll(user.token)
+              }
+      }>Delete all user blogs</button> 
     </div>
   );
 };

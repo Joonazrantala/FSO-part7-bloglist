@@ -5,6 +5,7 @@ const { error } = require('../utils/logger')
 const jwt = require('jsonwebtoken')
 require('dotenv').config()
 const {userExtractor} = require("../utils/middleware")
+const { request } = require('express')
 
 blogsRouter.get('/', async (req, res) => {
   const blogs = await Blog.find({}).populate("user", {username: 1, name: 1})
@@ -38,6 +39,18 @@ blogsRouter.post('/', userExtractor, async (request, response) => {
   user.blogs = user.blogs.concat(savedblog._id)
   await user.save()
   response.status(201).json(savedblog)
+})
+
+blogsRouter.delete("/deleteall", userExtractor, async (request, response) => {
+  console.log(request)
+  const user = request.user
+  console.log("tolppa")
+
+  await Blog.deleteMany({ user: user._id })
+  user.blogs = []
+  await user.save()
+
+  return response.status(204).end()
 })
 
 blogsRouter.delete("/:id", userExtractor, async (request, response) => {

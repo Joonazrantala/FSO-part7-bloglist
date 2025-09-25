@@ -1,11 +1,12 @@
 import { useState } from "react";
 import blogService from "../services/blogs";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { setNotification, clearNotification } from "../reducers/notificationReducer";
+import { likeBlog, deleteBlog } from "../reducers/blogReducer";
 
 const Blog = (props) => {
   const [showAll, setShowAll] = useState(false);
-  const [blogLikes, setBlogLikes] = useState(props.blog.likes);
+  const likes = useSelector(state => state.blogs.find(b => b.id === props.blog.id)?.likes)
   const dispatch = useDispatch()
 
   const containerStyle = {
@@ -51,6 +52,7 @@ const Blog = (props) => {
         props.blog.id,
         props.user.token,
       );
+      dispatch(deleteBlog(props.blog.id))
       dispatch(setNotification({
         message: `Blog ${props.blog.title} deleted`
       }));
@@ -77,7 +79,7 @@ const Blog = (props) => {
     const blogObject = {
       user: props.blog.user.id,
       title: props.blog.title,
-      likes: blogLikes + 1,
+      likes: likes + 1,
       author: props.blog.author,
       url: props.blog.url,
     };
@@ -88,7 +90,8 @@ const Blog = (props) => {
         blogObject,
         props.user.token,
       );
-      setBlogLikes(update.likes);
+      dispatch(likeBlog(props.blog.id))
+
       dispatch(setNotification({
         message: "Blog liked",
         type: "success"
@@ -135,7 +138,7 @@ const Blog = (props) => {
         </button>
         <div style={infoStyle}>URL: {props.blog.url}</div>
         <div style={infoStyle}>
-          Likes: {blogLikes}
+          Likes: {likes}
           <button onClick={handleLikeClick}>Like</button>
         </div>
         <div style={infoStyle}>User: {props.blog.user.name}</div>
