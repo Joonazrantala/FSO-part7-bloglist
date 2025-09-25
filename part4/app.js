@@ -7,7 +7,7 @@ const usersRouter = require("./controllers/users.js")
 const loginRouter = require("./controllers/login.js")
 const logger = require('./utils/logger.js')
 const config = require('./utils/config.js')
-const { errorHandler, unknownEndpoint, requestLogger, tokenExtractor, userExtractor} = require('./utils/middleware')
+const { errorHandler, unknownEndpoint, requestLogger, tokenExtractor, userExtractor} = require('./utils/middleware.js')
 
 app.use(express.json())
 app.use(requestLogger)
@@ -31,7 +31,7 @@ app.use('/api', usersRouter)
 app.use("/api/login", loginRouter)
 
 if (process.env.NODE_ENV === "test") {
-  const testRouter = require("./controllers/testreset")
+  const testRouter = require("./controllers/testreset.js")
   app.use('/api/testing', testRouter)
 }
 
