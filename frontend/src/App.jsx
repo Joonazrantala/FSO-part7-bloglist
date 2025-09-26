@@ -7,35 +7,66 @@ import NewBlogForm from "./components/newBlogForm";
 import Blog from "./components/Blog";
 import { useContext } from "react";
 import NotificationContext from "../context/notificationContext";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import UserContext from "../context/UserContext";
 
 const App = () => {
-  const [blogs, setBlogs] = useState([]);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [user, setUser] = useState(null);
+  const [user, userDispatch] = useContext(UserContext);
+  const queryClient = useQueryClient();
   const { notification, setNotification } = useContext(NotificationContext);
 
-  useEffect(() => {
-    if (user) {
-      fetchAllBlogs();
-    }
-  }, [user]);
+  const newBlogMutation = useMutation({
+    mutationFn: ({ blog, token }) => blogService.postBlog(blog, token),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["blogs"] });
+      setNotification("A new blog added", "success");
+    },
+    onError: () => {
+      setNotification("Can't add blog", "error");
+    },
+  });
+
+  const deleteBlogMutation = useMutation({
+    mutationFn: ({ id, token }) => blogService.deleteBlog(id, token),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["blogs"] });
+      setNotification("Blog deleted", "success");
+    },
+    onError: () => {
+      setNotification("Can't delete blog", "error");
+    },
+  });
+
+  const { data: blogs, isLoading } = useQuery({
+    queryKey: ["blogs"],
+    queryFn: async () => {
+      const data = await blogService.getAll();
+      return data.sort((a, b) => b.likes - a.likes);
+    },
+  });
 
   useEffect(() => {
     const loggedUserJSON = window.localStorage.getItem("loggedBlogappUser");
     if (loggedUserJSON) {
       const user = JSON.parse(loggedUserJSON);
-      setUser(user);
+      userDispatch({ type: "SET", payload: user });
     }
   }, []);
+
+  if (isLoading) {
+    return <div>loading data...</div>;
+  }
 
   const handleLogin = async (event) => {
     event.preventDefault();
     try {
       const user = await loginService.login({ username, password });
-
       window.localStorage.setItem("loggedBlogappUser", JSON.stringify(user));
-      setUser(user);
+      console.log(user);
+      userDispatch({ type: "SET", payload: user });
+
       setUsername("");
       setPassword("");
     } catch (exception) {
@@ -45,25 +76,20 @@ const App = () => {
 
   const handleLogout = () => {
     window.localStorage.removeItem("loggedBlogappUser");
-    setUser(null);
+    userDispatch({ type: "CLEAR" });
   };
 
   const createBlog = async (blogObject) => {
-    try {
-      const newBlog = await blogService.postBlog(blogObject, user.token);
-      newBlog.user = { ...user };
-      setBlogs(blogs.concat(newBlog));
-      setNotification(
-        `A new blog "${blogObject.title}" by ${blogObject.author} added!`,
-        "success",
-      );
-    } catch {
-      setNotification("Failed to add blog", "error");
-    }
+    blogObject.user = { ...user };
+    newBlogMutation.mutate({
+      blog: blogObject,
+      token: user.token,
+    });
   };
 
-  const handleDelete = (idtodelete) => {
-    setBlogs(blogs.filter((blog) => blog.id !== idtodelete));
+  const handleDelete = (blog) => {
+    console.log(blog);
+    deleteBlogMutation.mutate({ id: blog.id, token: user.token });
   };
 
   const loginForm = () => (
@@ -89,16 +115,6 @@ const App = () => {
       <button type="submit">login</button>
     </form>
   );
-
-  const fetchAllBlogs = async () => {
-    try {
-      const allBlogs = await blogService.getAll();
-      allBlogs.sort((a, b) => b.likes - a.likes);
-      setBlogs(allBlogs);
-    } catch (error) {
-      console.error("Failed to fetch blogs", error);
-    }
-  };
 
   const logoutButton = (props) => {
     return (

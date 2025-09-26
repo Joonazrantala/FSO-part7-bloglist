@@ -2,11 +2,22 @@ import { useState } from "react";
 import blogService from "../services/blogs";
 import { useContext } from "react";
 import NotificationContext from "../../context/notificationContext";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 const Blog = (props) => {
+  const queryClient = useQueryClient();
   const [showAll, setShowAll] = useState(false);
-  const [blogLikes, setBlogLikes] = useState(props.blog.likes);
   const { notification, setNotification } = useContext(NotificationContext);
+
+  const likeMutation = useMutation({
+    mutationFn: ({ id, blog, token }) =>
+      blogService.updateBlog(id, blog, token),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["blogs"] });
+      setNotification("Blog liked", "success");
+    },
+    onError: () => setNotification("Can't like blog", "error"),
+  });
 
   const containerStyle = {
     border: "1px solid #ccc",
@@ -42,49 +53,19 @@ const Blog = (props) => {
     fontSize: 14,
   };
 
-  const handleDeleteClick = async () => {
-    const confirmDelete = window.confirm(`Delete "${props.blog.title}"?`);
-    if (!confirmDelete) return;
-
-    try {
-      const deleteblog = await blogService.deleteBlog(
-        props.blog.id,
-        props.user.token,
-      );
-
-      setNotification("Blog deleted", "success");
-
-      props.onDelete(props.blog.id);
-    } catch {
-      setNotification("Can't delete blog", "error");
+  const handleDeleteClick = () => {
+    if (window.confirm(`Delete "${props.blog.title}"?`)) {
+      props.onDelete(props.blog);
     }
   };
 
-  const handleLikeClick = async () => {
-    if (props.onLike) {
-      props.onLike();
-    }
-
-    const blogObject = {
-      user: props.blog.user.id,
-      title: props.blog.title,
-      likes: blogLikes + 1,
-      author: props.blog.author,
-      url: props.blog.url,
-    };
-
-    try {
-      const update = await blogService.updateBlog(
-        props.blog.id,
-        blogObject,
-        props.user.token,
-      );
-      setBlogLikes(update.likes);
-
-      setNotification("Blog liked", "success");
-    } catch (exception) {
-      setNotification("Can't update blog likes", "error");
-    }
+  const handleLikeClick = () => {
+    const blogToUpdate = { ...props.blog, likes: props.blog.likes + 1 };
+    likeMutation.mutate({
+      id: blogToUpdate.id,
+      blog: blogToUpdate,
+      token: props.user.token,
+    });
   };
 
   const toggleShowAll = () => {
@@ -115,7 +96,7 @@ const Blog = (props) => {
         </button>
         <div style={infoStyle}>URL: {props.blog.url}</div>
         <div style={infoStyle}>
-          Likes: {blogLikes}
+          Likes: {props.blog.likes}
           <button onClick={handleLikeClick}>Like</button>
         </div>
         <div style={infoStyle}>User: {props.blog.user.name}</div>
@@ -126,5 +107,4 @@ const Blog = (props) => {
     );
   }
 };
-
 export default Blog;

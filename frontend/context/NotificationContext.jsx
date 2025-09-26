@@ -1,6 +1,7 @@
 import { createContext, useReducer, useRef } from "react";
 
 const initialState = { message: "", type: "" };
+
 const notificationReducer = (state = initialState, action) => {
   switch (action.type) {
     case "SET":

@@ -1,5 +1,4 @@
 const Notification = ({ message, type }) => {
-  console.log(message);
   if (!message) return null; // Don’t show anything if there's no message
 
   const style = {
