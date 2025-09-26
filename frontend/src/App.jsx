@@ -5,14 +5,15 @@ import Notification from "./components/notification";
 import Togglable from "./components/togglable";
 import NewBlogForm from "./components/newBlogForm";
 import Blog from "./components/Blog";
+import { useContext } from "react";
+import NotificationContext from "../context/notificationContext";
 
 const App = () => {
   const [blogs, setBlogs] = useState([]);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [user, setUser] = useState(null);
-  const [errorMessage, setErrorMessage] = useState(null);
-  const [successMessage, setSuccessMessage] = useState(null);
+  const [notification, notificationDispatch] = useContext(NotificationContext);
 
   useEffect(() => {
     if (user) {
@@ -38,9 +39,15 @@ const App = () => {
       setUsername("");
       setPassword("");
     } catch (exception) {
-      setErrorMessage("Wrong credentials");
+      notificationDispatch({
+        type: "SET",
+        payload: {
+          message: "Wrong credentials",
+          type: "error",
+        },
+      });
       setTimeout(() => {
-        setErrorMessage(null);
+        notificationDispatch({ type: "CLEAR" });
       }, 5000);
     }
   };
@@ -55,13 +62,35 @@ const App = () => {
       const newBlog = await blogService.postBlog(blogObject, user.token);
       newBlog.user = { ...user };
       setBlogs(blogs.concat(newBlog));
-      setSuccessMessage(
-        `A new blog "${blogObject.title}" by ${blogObject.author} added!`,
+      notificationDispatch({
+        type: "SET",
+        payload: {
+          message: `A new blog "${blogObject.title}" by ${blogObject.author} added!`,
+          type: "success",
+        },
+      });
+      setTimeout(
+        () =>
+          notificationDispatch({
+            type: "CLEAR",
+          }),
+        5000,
       );
-      setTimeout(() => setSuccessMessage(null), 5000);
     } catch {
-      setErrorMessage("Failed to create blog");
-      setTimeout(() => setErrorMessage(null), 5000);
+      notificationDispatch({
+        type: "SET",
+        payload: {
+          message: "Failed to create blog",
+          type: "error",
+        },
+      });
+      setTimeout(
+        () =>
+          notificationDispatch({
+            type: "CLEAR",
+          }),
+        5000,
+      );
     }
   };
 
@@ -93,27 +122,6 @@ const App = () => {
     </form>
   );
 
-  /*const fetchMyBlogs = async () => {
-    try {
-      const myBlogs = await blogService.getUserBlogs(user.token)
-      console.log(myBlogs)
-      myBlogs.sort((a,b) => {
-        if (a.likes > b.likes) {
-          return -1
-        } 
-        if (a.likes < b.likes) {
-          return 1
-        }
-        return 0
-      })
-
-      setBlogs(myBlogs)
-
-    } catch (error) {
-      console.error('Failed to fetch user blogs', error)
-    }
-  }*/
-
   const fetchAllBlogs = async () => {
     try {
       const allBlogs = await blogService.getAll();
@@ -135,8 +143,7 @@ const App = () => {
   return (
     <div>
       <h1>Blogs</h1>
-      <Notification message={successMessage} type="success" />
-      <Notification message={errorMessage} type="error" />
+      <Notification message={notification.message} type={notification.type} />
       {!user && <h2>Log in to application</h2>}
 
       {!user && loginForm()}
@@ -154,8 +161,6 @@ const App = () => {
               blog={blog}
               user={user}
               onDelete={handleDelete}
-              setErrorMessage={setErrorMessage}
-              setSuccessMessage={setSuccessMessage}
             />
           ))}
         </div>

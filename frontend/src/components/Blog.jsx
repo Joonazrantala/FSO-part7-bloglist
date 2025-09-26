@@ -1,9 +1,12 @@
 import { useState } from "react";
 import blogService from "../services/blogs";
+import { useContext } from "react";
+import NotificationContext from "../../context/notificationContext";
 
 const Blog = (props) => {
   const [showAll, setShowAll] = useState(false);
   const [blogLikes, setBlogLikes] = useState(props.blog.likes);
+  const [notification, notificationDispatch] = useContext(NotificationContext);
 
   const containerStyle = {
     border: "1px solid #ccc",
@@ -48,15 +51,31 @@ const Blog = (props) => {
         props.blog.id,
         props.user.token,
       );
-      props.setSuccessMessage("Blog deleted");
+
+      notificationDispatch({
+        type: "SET",
+        payload: {
+          message: "Blog deleted",
+          type: "success",
+        },
+      });
+
       setTimeout(() => {
-        props.setSuccessMessage(null);
+        notificationDispatch({ type: "CLEAR" });
       }, 5000);
+
       props.onDelete(props.blog.id);
     } catch {
-      props.setErrorMessage("Can't delete blog");
+      notificationDispatch({
+        type: "SET",
+        payload: {
+          message: "Can't delete blog",
+          type: "error",
+        },
+      });
+
       setTimeout(() => {
-        props.setErrorMessage(null);
+        notificationDispatch({ type: "CLEAR" });
       }, 5000);
     }
   };
@@ -81,14 +100,30 @@ const Blog = (props) => {
         props.user.token,
       );
       setBlogLikes(update.likes);
-      props.setSuccessMessage("Blog liked");
+      notificationDispatch({
+        type: "SET",
+        payload: {
+          message: "Blog liked",
+          type: "success",
+        },
+      });
+
       setTimeout(() => {
-        props.setSuccessMessage(null);
+        notificationDispatch({
+          type: "CLEAR",
+        });
       }, 5000);
     } catch (exception) {
-      props.setErrorMessage("Can't update blog likes");
+      notificationDispatch({
+        type: "SET",
+        payload: {
+          message: "Can't update blog likes",
+          type: "error",
+        },
+      });
+
       setTimeout(() => {
-        props.setErrorMessage(null);
+        notificationDispatch({ type: "CLEAR" });
       }, 5000);
     }
   };
