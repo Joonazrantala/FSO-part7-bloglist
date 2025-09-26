@@ -13,7 +13,7 @@ const App = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [user, setUser] = useState(null);
-  const [notification, notificationDispatch] = useContext(NotificationContext);
+  const { notification, setNotification } = useContext(NotificationContext);
 
   useEffect(() => {
     if (user) {
@@ -39,16 +39,7 @@ const App = () => {
       setUsername("");
       setPassword("");
     } catch (exception) {
-      notificationDispatch({
-        type: "SET",
-        payload: {
-          message: "Wrong credentials",
-          type: "error",
-        },
-      });
-      setTimeout(() => {
-        notificationDispatch({ type: "CLEAR" });
-      }, 5000);
+      setNotification("Wrong credentials", "error");
     }
   };
 
@@ -62,35 +53,12 @@ const App = () => {
       const newBlog = await blogService.postBlog(blogObject, user.token);
       newBlog.user = { ...user };
       setBlogs(blogs.concat(newBlog));
-      notificationDispatch({
-        type: "SET",
-        payload: {
-          message: `A new blog "${blogObject.title}" by ${blogObject.author} added!`,
-          type: "success",
-        },
-      });
-      setTimeout(
-        () =>
-          notificationDispatch({
-            type: "CLEAR",
-          }),
-        5000,
+      setNotification(
+        `A new blog "${blogObject.title}" by ${blogObject.author} added!`,
+        "success",
       );
     } catch {
-      notificationDispatch({
-        type: "SET",
-        payload: {
-          message: "Failed to create blog",
-          type: "error",
-        },
-      });
-      setTimeout(
-        () =>
-          notificationDispatch({
-            type: "CLEAR",
-          }),
-        5000,
-      );
+      setNotification("Failed to add blog", "error");
     }
   };
 

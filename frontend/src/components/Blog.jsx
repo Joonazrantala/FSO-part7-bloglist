@@ -6,7 +6,7 @@ import NotificationContext from "../../context/notificationContext";
 const Blog = (props) => {
   const [showAll, setShowAll] = useState(false);
   const [blogLikes, setBlogLikes] = useState(props.blog.likes);
-  const [notification, notificationDispatch] = useContext(NotificationContext);
+  const { notification, setNotification } = useContext(NotificationContext);
 
   const containerStyle = {
     border: "1px solid #ccc",
@@ -52,31 +52,11 @@ const Blog = (props) => {
         props.user.token,
       );
 
-      notificationDispatch({
-        type: "SET",
-        payload: {
-          message: "Blog deleted",
-          type: "success",
-        },
-      });
-
-      setTimeout(() => {
-        notificationDispatch({ type: "CLEAR" });
-      }, 5000);
+      setNotification("Blog deleted", "success");
 
       props.onDelete(props.blog.id);
     } catch {
-      notificationDispatch({
-        type: "SET",
-        payload: {
-          message: "Can't delete blog",
-          type: "error",
-        },
-      });
-
-      setTimeout(() => {
-        notificationDispatch({ type: "CLEAR" });
-      }, 5000);
+      setNotification("Can't delete blog", "error");
     }
   };
 
@@ -100,31 +80,10 @@ const Blog = (props) => {
         props.user.token,
       );
       setBlogLikes(update.likes);
-      notificationDispatch({
-        type: "SET",
-        payload: {
-          message: "Blog liked",
-          type: "success",
-        },
-      });
 
-      setTimeout(() => {
-        notificationDispatch({
-          type: "CLEAR",
-        });
-      }, 5000);
+      setNotification("Blog liked", "success");
     } catch (exception) {
-      notificationDispatch({
-        type: "SET",
-        payload: {
-          message: "Can't update blog likes",
-          type: "error",
-        },
-      });
-
-      setTimeout(() => {
-        notificationDispatch({ type: "CLEAR" });
-      }, 5000);
+      setNotification("Can't update blog likes", "error");
     }
   };
 
