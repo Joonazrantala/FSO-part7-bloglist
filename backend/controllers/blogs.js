@@ -70,13 +70,11 @@ blogsRouter.patch("/:id", async (request, response) => {
 blogsRouter.put('/:id', userExtractor, async (request, response) => {
   const id = request.params.id
   const blogData = request.body
-
   const updatedBlog = {
     title: blogData.title,
     author: blogData.author,
     url: blogData.url,
-    likes: blogData.likes,
-    user: blogData.user // Make sure this matches your schema
+    likes: blogData.likes
   }
 
   try {
