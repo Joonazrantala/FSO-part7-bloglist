@@ -55,10 +55,23 @@ const deleteAll = async (token) => {
     headers: {
       Authorization: `Bearer ${token}`,
     },
-  }
-  console.log(`${baseUrl}/deleteall`, config)
-  const response = await axios.delete(`${baseUrl}/deleteall`, config)
-  return response
-}
+  };
+  console.log(`${baseUrl}/deleteall`, config);
+  const response = await axios.delete(`${baseUrl}/deleteall`, config);
+  return response;
+};
 
-export default { getAll, getUserBlogs, postBlog, updateBlog, deleteBlog, deleteAll };
+const postComment = async (id, comment) => {
+  const response = await axios.post(`${baseUrl}/${id}/comments`, { comment });
+  return response.data;
+};
+
+export default {
+  getAll,
+  getUserBlogs,
+  postBlog,
+  updateBlog,
+  deleteBlog,
+  deleteAll,
+  postComment,
+};

@@ -5,32 +5,49 @@ import Notification from "./components/notification";
 import Togglable from "./components/togglable";
 import NewBlogForm from "./components/newBlogForm";
 import Blog from "./components/Blog";
-import { clearNotification, setNotification } from "./reducers/notificationReducer";
+import {
+  clearNotification,
+  setNotification,
+  newNotification,
+} from "./reducers/notificationReducer";
 import { setBlogs, createBlog, deleteBlog } from "./reducers/blogReducer";
 import { useDispatch, useSelector } from "react-redux";
-import { setUser } from "./reducers/userReducer";
+import { setUser, setUserList } from "./reducers/userReducer";
+import axios from "axios";
+import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import Userlist from "./components/Userlist";
+import User from "./components/User";
+import Bloglist from "./components/Bloglist";
 
 const App = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const user = useSelector(state => state.user)
-  const dispatch = useDispatch()
-  const blogs = useSelector(state => state.blogs)
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const user = useSelector((state) => state.users.user);
+  const dispatch = useDispatch();
+  const blogs = useSelector((state) => state.blogs);
 
   useEffect(() => {
     const fetchData = async () => {
       const blogs = await blogService.getAll();
-      blogs.sort((a, b) => b.likes - a.likes)
+      blogs.sort((a, b) => b.likes - a.likes);
       dispatch(setBlogs(blogs));
     };
     fetchData();
   }, [dispatch]);
 
   useEffect(() => {
+    const fetchUsers = async () => {
+      const users = await axios.get("/api/users");
+      users.data.sort((a, b) => b.blogs.length - a.blogs.length);
+      dispatch(setUserList(users.data));
+    };
+    fetchUsers();
+  }, [dispatch]);
+
+  useEffect(() => {
     const loggedUserJSON = window.localStorage.getItem("loggedBlogappUser");
     if (loggedUserJSON && loggedUserJSON !== "undefined") {
       const loggedUser = JSON.parse(loggedUserJSON);
-      console.log("logged user", loggedUser)
       dispatch(setUser(loggedUser));
     }
   }, [dispatch]);
@@ -39,15 +56,15 @@ const App = () => {
     event.preventDefault();
     try {
       const response = await loginService.login({ username, password });
-      window.localStorage.setItem("loggedBlogappUser", JSON.stringify(response));
-      dispatch(setUser(response))
-      setUsername('')
-      setPassword('')
+      window.localStorage.setItem(
+        "loggedBlogappUser",
+        JSON.stringify(response),
+      );
+      dispatch(setUser(response));
+      setUsername("");
+      setPassword("");
     } catch (exception) {
-      dispatch(setNotification({message: "Unauthorized login", type: "error"}));
-      setTimeout(() => {
-        dispatch(clearNotification());
-      }, 5000);
+      dispatch(newNotification("Unauthorized login", "error", 5000));
     }
   };
 
@@ -56,29 +73,26 @@ const App = () => {
     dispatch(setUser(null));
   };
 
-  const handleCreateBlog = async (blogObject) => { // create new blog
+  const handleCreateBlog = async (blogObject) => {
+    // create new blog
     try {
       const newBlog = await blogService.postBlog(blogObject, user.token);
       newBlog.user = { ...user };
-      dispatch(createBlog(newBlog))
-
-
-      dispatch(setNotification({
-        message: `A new blog "${blogObject.title}" by ${blogObject.author} added!`,
-        type: "success"
-      }))
-      setTimeout(() => dispatch(clearNotification()), 5000);
+      dispatch(createBlog(newBlog));
+      dispatch(
+        newNotification(
+          `A new blog "${blogObject.title}" by ${blogObject.author} added!`,
+          "success",
+          5000,
+        ),
+      );
     } catch {
-      dispatch(setNotification({
-        message: "Failed to create blog",
-        type: "error"
-      }))
-      setTimeout(() => dispatch(clearNotification()), 5000);
+      dispatch(newNotification("Can't add blog", "error", 5000));
     }
   };
 
   const handleDelete = (idtodelete) => {
-    dispatch(deleteBlog(idtodelete))
+    dispatch(deleteBlog(idtodelete));
   };
 
   const loginForm = () => (
@@ -115,8 +129,10 @@ const App = () => {
 
   return (
     <div>
+      <Link to="/">Blogs</Link>
+      <Link to="/users">Userlist</Link>
       <h1>Blogs</h1>
-      <Notification/>
+      <Notification />
       {!user && <h2>Log in to application</h2>}
 
       {!user && loginForm()}
@@ -125,17 +141,24 @@ const App = () => {
           <p>
             {user.name} logged in {logoutButton()}
           </p>
-          <Togglable buttonLabel="New blog">
-            <NewBlogForm handleCreateBlog={handleCreateBlog} user={user}/>
-          </Togglable>
-          {blogs.map((blog) => (
-            <Blog
-              key={blog.id}
-              blog={blog}
-              user={user}
-              onDelete={handleDelete}
+
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <Bloglist
+                  user={user}
+                  handleCreateBlog={handleCreateBlog}
+                ></Bloglist>
+              }
             />
-          ))}
+            <Route path="/users/:id" element={<User />}></Route>
+            <Route path="/users" element={<Userlist />}></Route>
+            <Route
+              path="/blogs/:id"
+              element={<Blog user={user}></Blog>}
+            ></Route>
+          </Routes>
         </div>
       )}
     </div>

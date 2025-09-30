@@ -1,5 +1,5 @@
 import { useState } from "react";
-import blogService from "../services/blogs"
+import blogService from "../services/blogs";
 
 const NewBlogForm = ({ handleCreateBlog, user }) => {
   const [title, setTitle] = useState("");
@@ -48,11 +48,15 @@ const NewBlogForm = ({ handleCreateBlog, user }) => {
         </div>
         <button type="submit">create</button>
       </form>
-      <button onClick={ async () => {
-                if (!window.confirm("Are you sure you want to delete all blogs?")) return
-                await blogService.deleteAll(user.token)
-              }
-      }>Delete all user blogs</button> 
+      <button
+        onClick={async () => {
+          if (!window.confirm("Are you sure you want to delete all blogs?"))
+            return;
+          await blogService.deleteAll(user.token);
+        }}
+      >
+        Delete all user blogs
+      </button>
     </div>
   );
 };
